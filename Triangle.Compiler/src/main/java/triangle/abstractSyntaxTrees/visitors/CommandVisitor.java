@@ -26,5 +26,4 @@ public interface CommandVisitor<TArg, TResult> {
 	TResult visitSequentialCommand(SequentialCommand ast, TArg arg);
 
 	TResult visitWhileCommand(WhileCommand ast, TArg arg);
-
 }

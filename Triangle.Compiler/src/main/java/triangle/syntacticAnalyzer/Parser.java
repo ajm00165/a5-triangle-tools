@@ -280,31 +280,70 @@ public class Parser {
 
 		switch (currentToken.kind) {
 
-		case IDENTIFIER: {
-			Identifier iAST = parseIdentifier();
-			if (currentToken.kind == Token.Kind.LPAREN) {
-				acceptIt();
-				ActualParameterSequence apsAST = parseActualParameterSequence();
-				accept(Token.Kind.RPAREN);
-				finish(commandPos);
-				commandAST = new CallCommand(iAST, apsAST, commandPos);
+            case IDENTIFIER: {
+                Identifier iAST = parseIdentifier();
 
-			} else {
+                if (currentToken.kind == Token.Kind.LPAREN) {
+                    // procedure/function call
+                    acceptIt();
+                    ActualParameterSequence apsAST = parseActualParameterSequence();
+                    accept(Token.Kind.RPAREN);
+                    finish(commandPos);
+                    commandAST = new CallCommand(iAST, apsAST, commandPos);
 
-				Vname vAST = parseRestOfVname(iAST);
-				accept(Token.Kind.BECOMES);
-				Expression eAST = parseExpression();
-				finish(commandPos);
-				commandAST = new AssignCommand(vAST, eAST, commandPos);
-			}
-		}
-			break;
+                } else {
+                    Vname vAST = parseRestOfVname(iAST);
+
+                    if (currentToken.kind == Token.Kind.BECOMES) {
+                        acceptIt();
+                        Expression eAST = parseExpression();
+                        finish(commandPos);
+                        commandAST = new AssignCommand(vAST, eAST, commandPos);
+
+                    } else if (currentToken.kind == Token.Kind.OPERATOR
+                            && currentToken.spelling.equals("*")) {
+
+                        SourcePosition pos = currentToken.position;
+                        acceptIt();  // first *
+
+                        if (currentToken.kind == Token.Kind.OPERATOR
+                                && currentToken.spelling.equals("*")) {
+                            acceptIt();  // second * -> now v**
+
+                            IntegerLiteral twoLit = new IntegerLiteral("2", pos);
+                            Operator mulOp = new Operator("*", pos);
+                            Expression rhs = new BinaryExpression(
+                                    new VnameExpression(vAST, pos),
+                                    mulOp,
+                                    new IntegerExpression(twoLit, pos),
+                                    pos);
+
+                            finish(commandPos);
+                            commandAST = new AssignCommand(vAST, rhs, commandPos);
+
+                        } else {
+                            syntacticError("single \"*\" not allowed here — use \":=\" or \"**\"", "*");
+                        }
+
+                    } else {
+                        syntacticError("\":=\" expected here", currentToken.spelling);
+                    }
+                }
+            }
+            break;
 
 		case BEGIN:
 			acceptIt();
 			commandAST = parseCommand();
 			accept(Token.Kind.END);
 			break;
+
+        case LCURLY:
+            acceptIt();
+            commandAST = parseCommand();
+            accept(Token.Kind.RCURLY);
+            finish(commandPos);
+            break;
 
 		case LET: {
 			acceptIt();
@@ -348,8 +387,11 @@ public class Parser {
         }
             break;
 
+
+
 		case SEMICOLON:
 		case END:
+        case RCURLY:
 		case ELSE:
 		case IN:
 		case EOT:
