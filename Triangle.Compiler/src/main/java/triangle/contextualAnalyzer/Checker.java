@@ -36,6 +36,7 @@ import triangle.abstractSyntaxTrees.aggregates.SingleRecordAggregate;
 import triangle.abstractSyntaxTrees.commands.AssignCommand;
 import triangle.abstractSyntaxTrees.commands.CallCommand;
 import triangle.abstractSyntaxTrees.commands.EmptyCommand;
+import triangle.abstractSyntaxTrees.commands.RepeatCommand;
 import triangle.abstractSyntaxTrees.commands.IfCommand;
 import triangle.abstractSyntaxTrees.commands.LetCommand;
 import triangle.abstractSyntaxTrees.commands.SequentialCommand;
@@ -187,6 +188,11 @@ public final class Checker implements ActualParameterVisitor<FormalParameter, Vo
 
 		return null;
 	}
+
+    @Override
+    public Void visitRepeatCommand(RepeatCommand ast, Void arg) {
+        return null;
+    }
 
 	// Expressions
 
@@ -907,6 +913,7 @@ public final class Checker implements ActualParameterVisitor<FormalParameter, Vo
 		StdEnvironment.falseDecl = declareStdConst("false", StdEnvironment.booleanType);
 		StdEnvironment.trueDecl = declareStdConst("true", StdEnvironment.booleanType);
 		StdEnvironment.notDecl = declareStdUnaryOp("\\", StdEnvironment.booleanType, StdEnvironment.booleanType);
+        StdEnvironment.barDecl = declareStdUnaryOp("|", StdEnvironment.integerType, StdEnvironment.integerType);
 		StdEnvironment.andDecl = declareStdBinaryOp("/\\", StdEnvironment.booleanType, StdEnvironment.booleanType,
 				StdEnvironment.booleanType);
 		StdEnvironment.orDecl = declareStdBinaryOp("\\/", StdEnvironment.booleanType, StdEnvironment.booleanType,

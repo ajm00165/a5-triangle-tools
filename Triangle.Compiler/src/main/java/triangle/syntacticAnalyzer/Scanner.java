@@ -39,7 +39,7 @@ public final class Scanner {
 
 	public static boolean isOperator(char c) {
 		return (c == '+' || c == '-' || c == '*' || c == '/' || c == '=' || c == '<' || c == '>' || c == '\\'
-				|| c == '&' || c == '@' || c == '%' || c == '^' || c == '?');
+                || c == '&' || c == '@' || c == '%' || c == '^' || c == '?' || c == '|');
 	}
 
 	///////////////////////////////////////////////////////////////////////////////
@@ -69,7 +69,8 @@ public final class Scanner {
 		switch (currentChar) {
 		
 		// comment
-		case '!': 
+        case '#':
+		case '!':
 			takeIt();
 			
 			// the comment ends when we reach an end-of-line (EOL) or end of file (EOT - for end-of-transmission)
@@ -78,6 +79,16 @@ public final class Scanner {
 			if (currentChar == SourceFile.EOL)
 				takeIt();
 			break;
+
+        // long comment
+        case '$': {
+            takeIt(); // now we grab characters, including newlines, until we hit a $ or end of file
+            while ((currentChar != '$') && (currentChar != SourceFile.EOT))
+                takeIt();
+            if ((currentChar != '$') || (currentChar == SourceFile.EOL ))
+                takeIt();
+        }
+        break;
 
 		// whitespace
 		case ' ':
@@ -165,7 +176,8 @@ public final class Scanner {
 				takeIt();
 			return Token.Kind.INTLITERAL;
 
-		case '+':
+        case '|':
+        case '+':
 		case '-':
 		case '*':
 		case '/':
@@ -256,7 +268,7 @@ public final class Scanner {
 
 		currentlyScanningToken = false;
 		// skip any whitespace or comments
-		while (currentChar == '!' || currentChar == ' ' || currentChar == '\n' || currentChar == '\r'
+        while (currentChar == '$' || currentChar == '#' || currentChar == '!' || currentChar == ' ' || currentChar == '\n' || currentChar == '\r'
 				|| currentChar == '\t')
 			scanSeparator();
 

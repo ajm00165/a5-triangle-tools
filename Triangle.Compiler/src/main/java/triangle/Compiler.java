@@ -27,6 +27,10 @@ import triangle.syntacticAnalyzer.Parser;
 import triangle.syntacticAnalyzer.Scanner;
 import triangle.syntacticAnalyzer.SourceFile;
 import triangle.treeDrawer.Drawer;
+import com.sampullara.cli.Args;
+import com.sampullara.cli.Argument;
+
+import java.util.List;
 
 /**
  * The main driver class for the Triangle compiler.
@@ -34,10 +38,19 @@ import triangle.treeDrawer.Drawer;
 public class Compiler {
 
 	/** The filename for the object program, normally obj.tam. */
-	static String objectName = "obj.tam";
-	
+    @Argument(alias = "o", description = "Output object file, 'obj.tam' by default")
+    static String objectName = "obj.tam";
+
+    @Argument(alias = "st", description = "Show the AST")
 	static boolean showTree = false;
-	static boolean folding = false;
+
+    @Argument(alias = "f")
+    static boolean folding = false;
+
+    @Argument(alias = "sa", description = "Show AST after folding")
+    static boolean showTreeAfter = false;
+
+    private static List<String> sFile;
 
 	private static Scanner scanner;
 	private static Parser parser;
@@ -96,6 +109,10 @@ public class Compiler {
 			}
 			if (folding) {
 				theAST.visit(new ConstantFolder());
+                if (showTreeAfter){
+                    System.out.println("AST after folding: ");
+                    drawer.draw(theAST);
+                }
 			}
 			
 			if (reporter.getNumErrors() == 0) {
@@ -121,33 +138,33 @@ public class Compiler {
 	 *             source filename.
 	 */
 	public static void main(String[] args) {
+        // parse using cli-parser
+        try {
+            sFile = Args.parse(Compiler.class, args);
+        } catch (IllegalArgumentException e) {
+            System.err.println(e.getMessage());
+            System.err.println();
+            Args.usage(Compiler.class);
+            System.exit(1);
+        }
 
-		if (args.length < 1) {
-			System.out.println("Usage: tc filename [-o=outputfilename] [tree] [folding]");
-			System.exit(1);
-		}
-		
-		parseArgs(args);
+        // must have exactly one source file
+        if (sFile.isEmpty()) {
+            System.err.println("Error: No source file specified.");
+            Args.usage(Compiler.class);
+            System.exit(1);
+        }
+        if (sFile.size() > 1) {
+            System.err.println("Error: Only one source file can be compiled at a time.");
+            System.exit(1);
+        }
 
-		String sourceName = args[0];
-		
+		String sourceName = sFile.get(0);
+
 		var compiledOK = compileProgram(sourceName, objectName, showTree, false);
 
 		if (!showTree) {
 			System.exit(compiledOK ? 0 : 1);
-		}
-	}
-	
-	private static void parseArgs(String[] args) {
-		for (String s : args) {
-			var sl = s.toLowerCase();
-			if (sl.equals("tree")) {
-				showTree = true;
-			} else if (sl.startsWith("-o=")) {
-				objectName = s.substring(3);
-			} else if (sl.equals("folding")) {
-				folding = true;
-			}
 		}
 	}
 }
